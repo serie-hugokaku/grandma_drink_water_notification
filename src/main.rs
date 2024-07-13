@@ -1,23 +1,40 @@
-use std::{collections::HashMap, env};
+use std::env;
 
-use actix_web::{post, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
+use dotenvy::dotenv;
+use rand::Rng;
+use reqwest::{multipart, Client};
+
+fn random_message() -> String {
+    let messages = [
+        "水分補給しとるか",
+        "スイカ食べとるか",
+        "水を飲まんかい",
+        "思ってる３倍は飲め",
+    ];
+
+    let mut r = rand::thread_rng();
+    let n = r.gen_range(0..messages.len());
+
+    messages[n].to_string()
+}
+
+#[get("/")]
+async fn health_check() -> impl Responder {
+    HttpResponse::Ok().body("health check ok")
+}
 
 #[post("/line-notify")]
 async fn line_notify() -> impl Responder {
-    const URL: &str = "https://notify-api.line.me/api/notify";
-
-    dotenvy::dotenv().ok();
+    dotenv().ok();
     let token = env::var("LINE_NOTIFY_TOKEN").expect("failed to load env");
 
-    let msg = "水分補給しとるか";
+    let form = multipart::Form::new().text("message", random_message());
 
-    let mut message = HashMap::new();
-    message.insert("message", msg);
-
-    let res = reqwest::Client::new()
-        .post(URL)
+    let res = Client::new()
+        .post("https://notify-api.line.me/api/notify")
         .bearer_auth(token)
-        .form(&message)
+        .multipart(form)
         .send()
         .await;
 
@@ -35,7 +52,7 @@ async fn line_notify() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(line_notify))
+    HttpServer::new(|| App::new().service(health_check).service(line_notify))
         .bind(("0.0.0.0", 8080))?
         .run()
         .await
