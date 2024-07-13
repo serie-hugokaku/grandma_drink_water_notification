@@ -6,8 +6,8 @@ use actix_web::{post, App, HttpResponse, HttpServer, Responder};
 async fn line_notify() -> impl Responder {
     const URL: &str = "https://notify-api.line.me/api/notify";
 
-    dotenvy::dotenv().expect(".env file not found");
-    let token = env::var("LINE_NOTIFY_TOKEN").expect("LINE_NOTIFY_TOKEN not found");
+    dotenvy::dotenv().ok();
+    let token = env::var("LINE_NOTIFY_TOKEN").expect("failed to load env");
 
     let msg = "水分補給しとるか";
 
