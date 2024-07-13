@@ -1,9 +1,11 @@
 use std::{collections::HashMap, env};
 
-const URL: &str = "https://notify-api.line.me/api/notify";
+use actix_web::{post, App, HttpResponse, HttpServer, Responder};
 
-#[tokio::main]
-async fn main() {
+#[post("/line-notify")]
+async fn line_notify() -> impl Responder {
+    const URL: &str = "https://notify-api.line.me/api/notify";
+
     dotenvy::dotenv().expect(".env file not found");
     let token = env::var("LINE_NOTIFY_TOKEN").expect("LINE_NOTIFY_TOKEN not found");
 
@@ -27,4 +29,14 @@ async fn main() {
         }
         Err(e) => eprintln!("error: {}", e),
     }
+
+    HttpResponse::Ok().body("success")
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| App::new().service(line_notify))
+        .bind(("0.0.0.0", 8080))?
+        .run()
+        .await
 }
