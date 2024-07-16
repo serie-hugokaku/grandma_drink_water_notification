@@ -1,3 +1,5 @@
+use chrono::{NaiveTime, Utc};
+use chrono_tz::Tz;
 use std::env;
 
 use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
@@ -16,7 +18,24 @@ fn random_message() -> String {
     let mut r = rand::thread_rng();
     let n = r.gen_range(0..messages.len());
 
-    messages[n].to_string()
+    let mut greet = String::new();
+
+    let tokyo: Tz = "Asia/Tokyo".parse().unwrap();
+    let current_time = Utc::now().with_timezone(&tokyo).time();
+
+    if NaiveTime::from_hms_opt(8, 0, 0) <= Some(current_time)
+        && Some(current_time) < NaiveTime::from_hms_opt(11, 0, 0)
+    {
+        greet = String::from("おはよう😀\n");
+    } else if NaiveTime::from_hms_opt(11, 0, 0) <= Some(current_time)
+        && Some(current_time) < NaiveTime::from_hms_opt(17, 0, 0)
+    {
+        greet = String::from("こんにちは👋\n");
+    } else {
+        greet = String::from("こんばんは✨\n");
+    }
+
+    greet + messages[n]
 }
 
 #[get("/")]
